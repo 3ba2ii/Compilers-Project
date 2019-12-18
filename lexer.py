@@ -1,110 +1,74 @@
 from sly import Lexer
-from sly import Parser
-from lexer import MyLexer
-class MyParser(Parser):
-    tokens = MyLexer.tokens
 
-    @_('')
-    def statement(self, p):
+class MyLexer(Lexer):
+    #Every Terminals our programming languages understands 
+    tokens = { VARIABLE_NAME, NUMBER, STRING, IF, THEN, ELSE, FOR, FUNC, TO, ARROW, EQUALEQUAL }
+
+    #Ignores Taps and Spaces
+    ignore = '\t '
+    #operators and others
+    literals = { '=', '+', '-', '/', '*',')','(' }
+    
+
+
+    """The r means that the string is to be treated as a raw string, which means all escape codes will be ignored.
+
+    For an example:
+
+    '\n' will be treated as a newline character, while r'\n' will be treated as the characters \ followed by n.
+    
+    """
+    
+    """
+    [0-9]	Returns a match for any digit between 0 and 9	
+    [0-5][0-9]	Returns a match for any two-digit numbers from 00 and 59
+    [a-zA-Z]	Returns a match for any character alphabetically between a and z, lower case OR upper case
+    []	A set of characters	"[a-m]"
+    *	Zero or more occurrences		
+    +	One or more occurrences
+    .	Any character (except newline character)
+    check "https://www.w3schools.com/python/python_regex.asp" for more 
+    """
+    #Our Tokens 
+    IF = r'IF'
+    THEN=r'THEN'
+    ELSE=r'ELSE'
+    FUNC=r'FUNC'
+    FOR=r'FOR'
+    TO=r'TO'
+    ARROW=r'->'
+    VARIABLE_NAME=r'[a-zA-Z_][a-zA-Z0-9]*'  #Variable VARIABLE_NAMEs must start with (a~z or A~Z or _) then anything in the second character
+
+    STRING=r'"[a-zA-Z0-9_=+-]*"'         #.*? => zero or more occurances of any charachter except new line   
+    EQUALEQUAL=r'=='
+
+
+    #To make control of number tokens
+
+    #\d+ means it has to be one or more digits
+    @_(r'\d+')
+    def NUMBER(self,t):
+        t.value=int(t.value)
+        return t
+
+    #.* => zero or more occurances of any charachter except new line    
+    @_(r'#.*')
+    def COMMENT(self,comm):
         pass
 
 
-    #The for loop grammar is 
-    #FOR  x=0 TO 5 THEN x
-    #                             for_loop
-    #                           /          \
-    #                    for_loop_setup     'var'       
-    #                      /    \             |  
-    #               var_assign   num          x  
-    #                /     \      |
-    #               x       num   5
-    #                        |
-    #                        5
 
-    @_('FOR var_assign TO expr THEN statement')
-    def statement(self, p):
-        return ('for_loop', ('for_loop_setup', p.var_assign, p.expr), p.statement)
-
-     
-    #                            if_stmt
-    #                           /       \
-    #                    condition       branch     
-    #                                   /    \
-    #                              statment   statement
-    #                               "THEN"      "ELSE"
-
-    @_('IF condition THEN statement ELSE statement')
-    def statement(self, p):
-        return ('if_stmt', p.condition, ('branch', p.statement0, p.statement1))
-
-    @_('FUNC VARIABLE_NAME "(" ")" ARROW statement')
-    def statement(self, p):
-        return ('fun_def', p.VARIABLE_NAME, p.statement)
+"""
+What does actually the parser do ?
+    -Parser takes the tokens in the order that they where given
+    -Check if this pattern actually means anything
+    -example:
+    -FUNC VARIABLE_NAME() -> a+b;
+    -means if found -> after the FUNC return this operation
+    -The Parser has to figure out if the language matches our grammar  
+"""
 
 
-    #THE NAME OF THE FUNCTION HERE IS TREATED AS A VARIABLE NAME TOO
-    @_('VARIABLE_NAME "(" ")"')
-    def statement(self, p):
-        return ('fun_call', p.VARIABLE_NAME)
-
-    @_('expr EQUALEQUAL expr')
-    def condition(self, p):
-        return ('condition_eqeq', p.expr0, p.expr1)
 
 
-    """Variable can be assigned to another variable or to an expression "x=1+2" or to a String 'x="Ahmed"'
-        Expression also could be a number x=1
-        it can also be another variable x=a "only if a is a predefined variable"
-    """
-    @_('var_assign')
-    def statement(self, p):
-        return p.var_assign
 
-    #X=10+5
-    @_('VARIABLE_NAME "=" expr')
-    def var_assign(self, p):
-        return ('var_assign', p.VARIABLE_NAME, p.expr)
-
-    #X=Y
-    @_('VARIABLE_NAME "=" STRING')
-    def var_assign(self, p):
-        return ('var_assign', p.VARIABLE_NAME, ('String',p.STRING))
-
-    #5
-    @_('expr')
-    def statement(self, p):
-        return (p.expr)
-
-    @_('expr "+" expr')
-    def expr(self, p):
-        return ('add', p.expr0, p.expr1)
-
-    @_('expr "-" expr')
-    def expr(self, p):
-        return ('sub', p.expr0, p.expr1)
-
-    @_('expr "*" expr')
-    def expr(self, p):
-        return ('mul', p.expr0, p.expr1)
-
-    @_('expr "/" expr')
-    def expr(self, p):
-        return ('div', p.expr0, p.expr1)
-
-
-    """expr -> expr0 + expr1 | 
-               expr0 - expr1 | 
-               expr0 * expr1 | 
-               expr0 % expr1 | 
-               NUMBER        |
-               VARIABLE_NAME
-               """
-    
-    #Terminals 
-    @_('VARIABLE_NAME')
-    def expr(self, p):
-        return ('var', p.VARIABLE_NAME)
-
-    @_('NUMBER')
-    def expr(self, p):
-        return ('num', p.NUMBER)
