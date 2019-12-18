@@ -4,13 +4,6 @@ from lexer import MyLexer
 class MyParser(Parser):
     tokens = MyLexer.tokens
 
-    precedence = (
-        ('left', '+', '-'),
-        ('left', '*', '/'),
-        ('right', 'UMINUS'),
-        )
-
-  
     @_('')
     def statement(self, p):
         pass
@@ -35,7 +28,7 @@ class MyParser(Parser):
      
     #                            if_stmt
     #                           /       \
-    #                    condition            
+    #                    condition       branch     
     #                                   /    \
     #                              statment   statement
     #                               "THEN"      "ELSE"
@@ -67,14 +60,17 @@ class MyParser(Parser):
     def statement(self, p):
         return p.var_assign
 
+    #X=10+5
     @_('VARIABLE_NAME "=" expr')
     def var_assign(self, p):
         return ('var_assign', p.VARIABLE_NAME, p.expr)
 
+    #X=Y
     @_('VARIABLE_NAME "=" STRING')
     def var_assign(self, p):
         return ('var_assign', p.VARIABLE_NAME, ('String',p.STRING))
 
+    #5
     @_('expr')
     def statement(self, p):
         return (p.expr)
@@ -95,10 +91,16 @@ class MyParser(Parser):
     def expr(self, p):
         return ('div', p.expr0, p.expr1)
 
-    @_('"-" expr %prec UMINUS') #To accept the minus sign before a number
-    def expr(self, p):
-        return p.expr
 
+    """expr -> expr0 + expr1 | 
+               expr0 - expr1 | 
+               expr0 * expr1 | 
+               expr0 % expr1 | 
+               NUMBER        |
+               VARIABLE_NAME
+               """
+    
+    #Terminals 
     @_('VARIABLE_NAME')
     def expr(self, p):
         return ('var', p.VARIABLE_NAME)
