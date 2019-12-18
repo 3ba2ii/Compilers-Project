@@ -1,19 +1,23 @@
 from lexer import MyLexer
 from parser import MyParser
 
-def main():
+if __name__ == "__main__":
+    
     lexer = MyLexer()
     parser = MyParser()
 
     while True:
-        try:
-            text = input('our language > ')
-        except EOFError:
-            break
+        
+        text = input('our language > ')
+        
         if text:
-            tree = parser.parse(lexer.tokenize(text))
+            
+            lex = lexer.tokenize(text)
+            #for token in lex:
+             #   print(token)
+            tree= parser.parse(lex)
             print(tree)
-main()
+
 
     
     
